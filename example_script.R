@@ -67,10 +67,10 @@ if(norm_choice == "L1"){
   }
   
   #observed radial data
-  R = apply(sample_data,1,L1_rad)
+  R = apply(std_data,1,L1_rad)
   
   #observed angular data
-  Q = apply( apply(sample_data,2,function(x,r){return(x/r)},r=R),1,L1_ang)
+  Q = apply( apply(std_data,2,function(x,r){return(x/r)},r=R),1,L1_ang)
   
   #dataframe of angular-radial data
   polar_data = data.frame(R=R,Q=Q)
@@ -86,15 +86,18 @@ if(norm_choice == "L1"){
   }
   
   #observed radial data
-  R = apply(sample_data,1,L2_rad)
+  R = apply(std_data,1,L2_rad)
   
   #observed angular data
-  Q = apply( apply(sample_data,2,function(x,r){return(x/r)},r=R),1,L2_ang)
+  Q = apply( apply(std_data,2,function(x,r){return(x/r)},r=R),1,L2_ang)
   
   #dataframe of angular-radial data
   polar_data = data.frame(R=R,Q=Q)
   
 }
+
+#Setting plotting parameters
+par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
 #Computing the empirical histogram for angular density
 hist(polar_data$Q, freq = FALSE,xlab="Q", main = "Angular density",sub="L1 coordinates",col=NULL,cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
@@ -117,7 +120,6 @@ lines(pred_Q,SI_local_fit$pred_para$shape,lwd=4,col="blue")
 #To avoid the plots needing a very long time to render, we only plot a subset of 5000 points
 set.seed(1)
 rand_5000 = sample(1:dim(data)[1],5000,replace=F)
-
 
 #We compute GPD upper bound for the conditional radial component
 upper_bound = SI_smooth_fit$pred_thresh - SI_smooth_fit$pred_para$scale/SI_smooth_fit$pred_para$shape
