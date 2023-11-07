@@ -5,7 +5,7 @@ This repository contains the code required for the inference techniques introduc
 
 * master_functions.R - this file contains all functions and packages required for performing inference
 * dataset1.rds - this file contains one of the metocean datasets considered in the case study of Murphy-Barltrop et al. (2024)
-* example_script.R - this file illustrates how the master functions can be easily applied to the metocean dataset. Can be used to recreate plots produced in the data
+* example_script.R - this file illustrates how the master functions can be easily applied to the metocean dataset. Can be used to recreate plots produced in the paper
 
 Please get in touch if you have any questions, or if you find a bug in part of the code. Enjoy playing around! 
 
