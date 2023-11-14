@@ -20,7 +20,7 @@ norm_choice = "L1" #Selecting the L1 norm. Can also choose L2 if desired/require
 
 # Data -----------------------------------------
 
-data = readRDS(file="dataset1.rds") #load data stored in the "dataset1.rds" file
+data = readRDS(file="datafiles/dataset1.rds") #load data stored in the "dataset1.rds" file
 
 data = data[,2:1] #selecting only columns of interest
 
