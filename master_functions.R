@@ -373,7 +373,7 @@ SPAR_equidensity_contours = function(density_level,norm_choice="L1",SPAR_GPD,SPA
 }
 
 #Wrapper for fitting the empirical version of the SPAR model 
-fit_SPAR_empirical = function(sample_data,norm_choice="L1",thresh_prob,pred_Q=seq(-2,2,length.out=201)){ #wrapper for fitting the SPAR model 
+fit_SPAR_empirical = function(sample_data,norm_choice="L1",thresh_prob,pred_Q=seq(-2,2,length.out=201),num_neigh){ #wrapper for fitting the SPAR model 
   #sample_data - this denotes the bivariate data centered at (0,0) for which to fit SPAR. Must be an n x 2 matrix, where n denotes number of observations
   #norm_choice - this denotes the choice of norm. Must equal either "L1" or "L2". Defaults to "L1"
   #thresh_prob - non-exceedance probability for which to estimate threshold. Must be a probability in (0,1)
