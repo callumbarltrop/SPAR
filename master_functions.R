@@ -1,3 +1,4 @@
+rm(list=ls())
 #Checking for required packages. This function will install any required packages if they are not already installed
 packages = c("evgam","copula","evd","parallel","circular")
 package.check <- lapply(
@@ -88,7 +89,7 @@ fit_SPAR_model = function(sample_data,norm_choice="L1",thresh_prob,k,k_shape=NUL
   
   #We first transform data to radial-angular coordinates
   #All radial/angular/sgn functions are repeated inside the fit_SPAR_model function. This allows for easier parallelisation of the code
-
+  
   sgn = function(y){
     if(y>=0){
       return(1)
@@ -197,8 +198,10 @@ fit_SPAR_model = function(sample_data,norm_choice="L1",thresh_prob,k,k_shape=NUL
   #obtain threshold function estimate for values in pred_Q interval
   pred_thresh = exp(predict(m_ald, newdata=data.frame(Q=pred_Q))$location) 
   
+  exp_quants = qexp(1 - ( 1 + ((predict(m_gpd,type = "response",newdata=polar_exceedance_data))$shape/(predict(m_gpd,type = "response",newdata=polar_exceedance_data))$scale)*(polar_exceedance_data$R_exc)  )^(-1/(predict(m_gpd,type = "response",newdata=polar_exceedance_data))$shape))
+  
   #return estimated threshold and parameter functions, along with the angular grid and non-exceedance probability. These are given in a list
-  return(list(pred_thresh=pred_thresh,pred_para=pred_para,pred_Q=pred_Q,thresh_prob=thresh_prob))
+  return(list(pred_thresh=pred_thresh,pred_para=pred_para,pred_Q=pred_Q,thresh_prob=thresh_prob,exp_quants=exp_quants))
   
 }
 
@@ -278,7 +281,7 @@ SPAR_angular_density = function(sample_data,norm_choice="L1",pred_Q=seq(-2,2,len
   
   #obtaining the estimated density function on the original angular scale. (pi/2) represents the corresponding Jacobian 
   f_Q = approxfun(x = (2*dens_est$x)/pi - 2,y = (pi/2)*dens_est$y) 
-
+  
   #obtain density estimates for values in pred_Q interval
   return(f_Q(pred_Q))
 }
@@ -373,7 +376,7 @@ SPAR_equidensity_contours = function(density_level,norm_choice="L1",SPAR_GPD,SPA
 }
 
 #Wrapper for fitting the empirical version of the SPAR model 
-fit_SPAR_empirical = function(sample_data,norm_choice="L1",thresh_prob,pred_Q=seq(-2,2,length.out=201),num_neigh){ #wrapper for fitting the SPAR model 
+fit_SPAR_empirical = function(sample_data,norm_choice="L1",thresh_prob,pred_Q=seq(-2,2,length.out=201)){ #wrapper for fitting the SPAR model 
   #sample_data - this denotes the bivariate data centered at (0,0) for which to fit SPAR. Must be an n x 2 matrix, where n denotes number of observations
   #norm_choice - this denotes the choice of norm. Must equal either "L1" or "L2". Defaults to "L1"
   #thresh_prob - non-exceedance probability for which to estimate threshold. Must be a probability in (0,1)
@@ -448,7 +451,6 @@ fit_SPAR_empirical = function(sample_data,norm_choice="L1",thresh_prob,pred_Q=se
   }
   
   #wrapper for obtaining empirical radial windows for each of the reference angles
-  #this function should NOT be used outside of the fit_SPAR_empirical function
   SPAR_empirical_windows = function(ref_Q,polar_data,num_neigh){
     #ref_q - reference angle 
     #polar_data - angular radial dataframe 
@@ -495,3 +497,19 @@ fit_SPAR_empirical = function(sample_data,norm_choice="L1",thresh_prob,pred_Q=se
   return(list(pred_thresh=emp_thresh,pred_para=emp_para,pred_Q=pred_Q,thresh_prob=thresh_prob))
 }
 
+#wrapper for obtaining empirical radial windows for each of the reference angles
+SPAR_empirical_windows = function(ref_Q,polar_data,num_neigh){
+  #ref_q - reference angle 
+  #polar_data - angular radial dataframe 
+  #num_neigh - number of neighbours for each local angular windows
+  
+  #finding differences between all observed angles and the reference angle. This metric is adjusted to account for periodicity in angles
+  diff = apply(cbind(4 - abs(polar_data$Q - ref_Q),abs(polar_data$Q - ref_Q)),1,min)
+  
+  #computing indices of num_neigh closest observed angles to ref_Q
+  eps.Q = sort(diff)[num_neigh]
+  nei.Q = which(diff <= eps.Q)
+  
+  #returning radial component at angles within local window
+  return(polar_data$R[nei.Q])
+}
