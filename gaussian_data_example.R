@@ -37,18 +37,21 @@ bw = 50
 #Number of neighbours for local estimation approach
 num_neigh = 300
 
+#Number of obervsations to simulate from the SPAR model
+nsim = 5000
+
 # Fitting SPAR ------------------------------------------------------------
 
 #The below code fits the SPAR model using both angular systems. The threshold and parameter functions are estimated both locally and smoothly
 #The code also estimates equidensity contours for a range of density levels
 
-L1_smooth_fit = fit_SPAR_model(sample_data = example_data,norm_choice = "L1",thresh_prob = thresh_prob,k=k,pred_Q = pred_Q)
+L1_smooth_fit = SPAR_smooth(sample_data = example_data,norm_choice = "L1",thresh_prob = thresh_prob,k=k,pred_Q = pred_Q)
 
-L2_smooth_fit = fit_SPAR_model(sample_data = example_data,norm_choice = "L2",thresh_prob = thresh_prob,k=k,pred_Q = pred_Q)
+L2_smooth_fit = SPAR_smooth(sample_data = example_data,norm_choice = "L2",thresh_prob = thresh_prob,k=k,pred_Q = pred_Q)
 
-L1_local_fit = fit_SPAR_empirical(sample_data = example_data,norm_choice = "L1",thresh_prob = thresh_prob,pred_Q = pred_Q)
+L1_local_fit = SPAR_local(sample_data = example_data,norm_choice = "L1",thresh_prob = thresh_prob,pred_Q = pred_Q,num_neigh = num_neigh)
 
-L2_local_fit = fit_SPAR_empirical(sample_data = example_data,norm_choice = "L2",thresh_prob = thresh_prob,pred_Q = pred_Q)
+L2_local_fit = SPAR_local(sample_data = example_data,norm_choice = "L2",thresh_prob = thresh_prob,pred_Q = pred_Q,num_neigh = num_neigh)
 
 L1_angular_density = SPAR_angular_density(sample_data = example_data,norm_choice = "L1",pred_Q = pred_Q,bw = bw)
 
@@ -56,10 +59,13 @@ L2_angular_density = SPAR_angular_density(sample_data = example_data,norm_choice
 
 density_levels = 10^(-(3:6)) #density levels for which to evaluate equidensity contours 
 
-L1_equidensity_density_curves = sapply(density_levels,SPAR_equidensity_contours,norm_choice="L1",SPAR_GPD=L1_smooth_fit,SPAR_ang=L1_angular_density,simplify = F)
+L1_equidensity_density_curves = SPAR_equidensity_contours(density_levels = density_levels,norm_choice="L1",SPAR_GPD=L1_smooth_fit,SPAR_ang=L1_angular_density)
 
-L2_equidensity_density_curves = sapply(density_levels,SPAR_equidensity_contours,norm_choice="L2",SPAR_GPD=L2_smooth_fit,SPAR_ang=L2_angular_density,simplify = F)
+L2_equidensity_density_curves = SPAR_equidensity_contours(density_levels = density_levels,norm_choice="L2",SPAR_GPD=L2_smooth_fit,SPAR_ang=L2_angular_density)
 
+L1_simulation = SPAR_simulation(sample_data=example_data,nsim=nsim,norm_choice = "L1",thresh_prob = thresh_prob,k=k,pred_Q = pred_Q,bw=bw)
+
+L2_simulation = SPAR_simulation(sample_data=example_data,nsim=nsim,norm_choice = "L2",thresh_prob = thresh_prob,k=k,pred_Q = pred_Q,bw=bw)
 
 # Comparing estimates and validation -----------------------------------------------------
 
@@ -67,27 +73,27 @@ L2_equidensity_density_curves = sapply(density_levels,SPAR_equidensity_contours,
 par(mfrow=c(1,3),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
 #Comparing local and smooth estimates of threshold function
-plot(pred_Q,L1_smooth_fit$pred_thresh,xlab="Q",ylab="R",main="Threshold",sub="L1 coordinates",typ="l",col=2,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(L1_smooth_fit$pred_thresh,L1_local_fit$pred_thresh))
+plot(pred_Q,L1_smooth_fit$pred_thresh,xlab="Q",ylab=expression(u[gamma]),main="Threshold",sub="L1 coordinates",typ="l",col=2,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(L1_smooth_fit$pred_thresh,L1_local_fit$pred_thresh))
 lines(pred_Q,L1_local_fit$pred_thresh,lwd=4,col="red")
 
 #Comparing local and smooth estimates of scale function
-plot(pred_Q,L1_smooth_fit$pred_para$scale,xlab="Q",ylab="R",main="Scale",sub="L1 coordinates",typ="l",col=3,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(L1_smooth_fit$pred_para$scale,L1_local_fit$pred_para$scale))
+plot(pred_Q,L1_smooth_fit$pred_para$scale,xlab="Q",ylab=expression(sigma),main="Scale",sub="L1 coordinates",typ="l",col=3,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(L1_smooth_fit$pred_para$scale,L1_local_fit$pred_para$scale))
 lines(pred_Q,L1_local_fit$pred_para$scale,lwd=4,col="green")
 
 #Comparing local and smooth estimates of shape function
-plot(pred_Q,L1_smooth_fit$pred_para$shape,xlab="Q",ylab="R",main="Shape",sub="L1 coordinates",typ="l",col=4,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(L1_smooth_fit$pred_para$shape,L1_local_fit$pred_para$shape))
+plot(pred_Q,L1_smooth_fit$pred_para$shape,xlab="Q",ylab=expression(xi),main="Shape",sub="L1 coordinates",typ="l",col=4,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(L1_smooth_fit$pred_para$shape,L1_local_fit$pred_para$shape))
 lines(pred_Q,L1_local_fit$pred_para$shape,lwd=4,col="blue")
 
 #Comparing local and smooth estimates of threshold function
-plot(pred_Q,L2_smooth_fit$pred_thresh,xlab="Q",ylab="R",main="Threshold",sub="L2 coordinates",typ="l",col=2,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(L2_smooth_fit$pred_thresh,L2_local_fit$pred_thresh))
+plot(pred_Q,L2_smooth_fit$pred_thresh,xlab="Q",ylab=expression(u[gamma]),main="Threshold",sub="L2 coordinates",typ="l",col=2,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(L2_smooth_fit$pred_thresh,L2_local_fit$pred_thresh))
 lines(pred_Q,L2_local_fit$pred_thresh,lwd=4,col="red")
 
 #Comparing local and smooth estimates of scale function
-plot(pred_Q,L2_smooth_fit$pred_para$scale,xlab="Q",ylab="R",main="Scale",sub="L2 coordinates",typ="l",col=3,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(L2_smooth_fit$pred_para$scale,L2_local_fit$pred_para$scale))
+plot(pred_Q,L2_smooth_fit$pred_para$scale,xlab="Q",ylab=expression(sigma),main="Scale",sub="L2 coordinates",typ="l",col=3,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(L2_smooth_fit$pred_para$scale,L2_local_fit$pred_para$scale))
 lines(pred_Q,L2_local_fit$pred_para$scale,lwd=4,col="green")
 
 #Comparing local and smooth estimates of shape function
-plot(pred_Q,L2_smooth_fit$pred_para$shape,xlab="Q",ylab="R",main="Shape",sub="L2 coordinates",typ="l",col=4,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(L2_smooth_fit$pred_para$shape,L2_local_fit$pred_para$shape))
+plot(pred_Q,L2_smooth_fit$pred_para$shape,xlab="Q",ylab=expression(xi),main="Shape",sub="L2 coordinates",typ="l",col=4,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(L2_smooth_fit$pred_para$shape,L2_local_fit$pred_para$shape))
 lines(pred_Q,L2_local_fit$pred_para$shape,lwd=4,col="blue")
 
 #Computing true equidensity contours for gaussian copula. Equidensity contours will be the same for both coordinate systems
@@ -158,5 +164,15 @@ plot(true_angdens_L2$q,true_angdens_L2$fq,type="l",lwd=3,col=2,xlab="q",ylab=exp
 lines(pred_Q,L2_angular_density,lwd=3,col=3)
 legend(-2,1,legend=c("True","Estimated"),lwd=3,col=c(2,3),cex=1.2,bg="white")
 
+#Setting plotting parameters
+par(mfrow=c(1,2),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
+#Plotting simulated data over original sample with L1 breakdown 
+plot(example_data,xlab="X",ylab="Y",main="SPAR model simulations",sub=paste0("Standard Laplace margins, L1 coordinates, rho = ",rho),col="grey",pch=16,lwd=3,xlim=range(example_data,L1_simulation$data_sample),ylim=range(example_data,L1_simulation$data_sample),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+points(L1_simulation$data_sample,pch=16,col=adjustcolor(3,alpha.f = 0.2))
+legend(range(example_data,L1_simulation$data_sample)[1],range(example_data,L1_simulation$data_sample)[2],legend=c("Observerd","Simulated"),pch=16,col=c("grey",adjustcolor(3,alpha.f = 0.2)),cex=1.2,bg="white")
 
+#Plotting simulated data over original sample with L2 breakdown 
+plot(example_data,xlab="X",ylab="Y",main="SPAR model simulations",sub=paste0("Standard Laplace margins, L2 coordinates, rho = ",rho),col="grey",pch=16,lwd=3,xlim=range(example_data,L2_simulation$data_sample),ylim=range(example_data,L2_simulation$data_sample),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+points(L2_simulation$data_sample,pch=16,col=adjustcolor(3,alpha.f = 0.2))
+legend(range(example_data,L2_simulation$data_sample)[1],range(example_data,L2_simulation$data_sample)[2],legend=c("Observerd","Simulated"),pch=16,col=c("grey",adjustcolor(3,alpha.f = 0.2)),cex=1.2,bg="white")
