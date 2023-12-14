@@ -129,14 +129,14 @@ colfunc_est = colorRampPalette(c( "orange","cyan"))
 par(mfrow=c(1,2),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
 #Plots comparing estimated and true equidensity contours
-plot(gaussian_density_contours[[1]],xlab="X",ylab="Y",main="Equidensity contours for gaussian copula",sub=paste0("Standard Laplace margins, L1 coordinates, rho = ",rho),type="l",col=1,lwd=3,xlim=range(gaussian_density_contours),ylim=range(gaussian_density_contours),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+plot(gaussian_density_contours[[1]],xlab="X",ylab="Y",main="Equidensity contours for gaussian copula",sub="L1 coordinates",type="l",col=1,lwd=3,xlim=range(gaussian_density_contours),ylim=range(gaussian_density_contours),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
 for(i in 1:length(gaussian_density_contours)){
   lines(gaussian_density_contours[[i]],lwd=3,col=colfunc_true(length(gaussian_density_contours))[i])
   lines(L1_equidensity_density_curves[[i]],lwd=3,col=colfunc_est(length(gaussian_density_contours))[i])
 }
 legend(-10,10,legend=paste0("10^(",-(1:length(gaussian_density_contours))-2,")"),lwd=3,col=colfunc_true(length(gaussian_density_contours)),cex=1.2,bg="white")
 
-plot(gaussian_density_contours[[1]],xlab="X",ylab="Y",main="Equidensity contours for gaussian copula",sub=paste0("Standard Laplace margins, L2 coordinates, rho = ",rho),type="l",col=1,lwd=3,xlim=range(gaussian_density_contours),ylim=range(gaussian_density_contours),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+plot(gaussian_density_contours[[1]],xlab="X",ylab="Y",main="Equidensity contours for gaussian copula",sub="L2 coordinates",type="l",col=1,lwd=3,xlim=range(gaussian_density_contours),ylim=range(gaussian_density_contours),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
 for(i in 1:length(gaussian_density_contours)){
   lines(gaussian_density_contours[[i]],lwd=3,col=colfunc_true(length(gaussian_density_contours))[i])
   lines(L2_equidensity_density_curves[[i]],lwd=3,col=colfunc_est(length(gaussian_density_contours))[i])
@@ -155,12 +155,12 @@ true_angdens_L2$fq = (pi/2)*true_angdens_L2$ft
 par(mfrow=c(1,2),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
 #Plots comparing angular density estimates to truth for both sets of estimates
-plot(true_angdens_L1$q,true_angdens_L1$fq,type="l",lwd=3,col=2,xlab="q",ylab=expression(f[Q](q)),main="Angular density for gaussian copula",sub=paste0("Standard Laplace margins, L1 coordinates, rho = ",rho),ylim=range(L1_angular_density,true_angdens_L1$fq),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+plot(true_angdens_L1$q,true_angdens_L1$fq,type="l",lwd=3,col=2,xlab="q",ylab=expression(f[Q](q)),main="Angular density",sub="L1 coordinates",ylim=range(L1_angular_density,true_angdens_L1$fq),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
 lines(pred_Q,L1_angular_density,lwd=3,col=3)
 legend(-2,1,legend=c("True","Estimated"),lwd=3,col=c(2,3),cex=1.2,bg="white")
 
 #Plots comparing angular density estimates to truth for both sets of estimates
-plot(true_angdens_L2$q,true_angdens_L2$fq,type="l",lwd=3,col=2,xlab="q",ylab=expression(f[Q](q)),main="Angular density for gaussian copula",sub=paste0("Standard Laplace margins, L2 coordinates, rho = ",rho),ylim=range(L2_angular_density,true_angdens_L2$fq),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+plot(true_angdens_L2$q,true_angdens_L2$fq,type="l",lwd=3,col=2,xlab="q",ylab=expression(f[Q](q)),main="Angular density",sub="L2 coordinates",ylim=range(L2_angular_density,true_angdens_L2$fq),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
 lines(pred_Q,L2_angular_density,lwd=3,col=3)
 legend(-2,1,legend=c("True","Estimated"),lwd=3,col=c(2,3),cex=1.2,bg="white")
 
@@ -168,11 +168,11 @@ legend(-2,1,legend=c("True","Estimated"),lwd=3,col=c(2,3),cex=1.2,bg="white")
 par(mfrow=c(1,2),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
 #Plotting simulated data over original sample with L1 breakdown 
-plot(example_data,xlab="X",ylab="Y",main="SPAR model simulations",sub=paste0("Standard Laplace margins, L1 coordinates, rho = ",rho),col="grey",pch=16,lwd=3,xlim=range(example_data,L1_simulation$data_sample),ylim=range(example_data,L1_simulation$data_sample),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+plot(example_data,xlab="X",ylab="Y",main="SPAR model simulations",sub="L1 coordinates",col="grey",pch=16,lwd=3,xlim=range(example_data,L1_simulation$data_sample),ylim=range(example_data,L1_simulation$data_sample),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
 points(L1_simulation$data_sample,pch=16,col=adjustcolor(3,alpha.f = 0.2))
 legend(range(example_data,L1_simulation$data_sample)[1],range(example_data,L1_simulation$data_sample)[2],legend=c("Observerd","Simulated"),pch=16,col=c("grey",adjustcolor(3,alpha.f = 0.2)),cex=1.2,bg="white")
 
 #Plotting simulated data over original sample with L2 breakdown 
-plot(example_data,xlab="X",ylab="Y",main="SPAR model simulations",sub=paste0("Standard Laplace margins, L2 coordinates, rho = ",rho),col="grey",pch=16,lwd=3,xlim=range(example_data,L2_simulation$data_sample),ylim=range(example_data,L2_simulation$data_sample),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+plot(example_data,xlab="X",ylab="Y",main="SPAR model simulations",sub="L2 coordinates",col="grey",pch=16,lwd=3,xlim=range(example_data,L2_simulation$data_sample),ylim=range(example_data,L2_simulation$data_sample),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
 points(L2_simulation$data_sample,pch=16,col=adjustcolor(3,alpha.f = 0.2))
 legend(range(example_data,L2_simulation$data_sample)[1],range(example_data,L2_simulation$data_sample)[2],legend=c("Observerd","Simulated"),pch=16,col=c("grey",adjustcolor(3,alpha.f = 0.2)),cex=1.2,bg="white")

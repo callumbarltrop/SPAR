@@ -383,6 +383,59 @@ SPAR_equidensity_contours = function(density_levels,norm_choice="L1",SPAR_GPD,SP
   return(estimated_density_contours)
 }
 
+#Function for estimating return level sets from fitted SPAR model
+SPAR_ret_level_sets = function(ret_period,obs_year,norm_choice="L1",SPAR_GPD){
+  #ret_period - the return period for evaluating the return level set
+  #obs_year - the number of observations per year within the data
+  #norm_choice - this denotes the choice of norm. Must equal either "L1" or "L2". Defaults to "L1"
+  #SPAR_GPD - output from either SPAR_smooth or SPAR_local. Must be a list
+  
+  if( ret_period < 0 | length(ret_period)!=1){
+    stop("ret_period must be a positive real number")
+  }
+  if( obs_year < 0 | length(obs_year)!=1){
+    stop("obs_year must be a positive real number")
+  }
+  if(!(norm_choice %in% c("L1","L2"))){
+    stop("norm_choice must equal either 'L1' or 'L2'")
+  }
+  if(!is.list(SPAR_GPD)){
+    stop("SPAR_GPD must be a list obtained as output from either SPAR_smooth or SPAR_local")
+  }
+  
+  #We check which coordinate system we are working in
+  if(norm_choice == "L1"){
+    
+    #Defining points on the unit sphere for the L1 norm
+    u_vec = ifelse(SPAR_GPD$pred_Q>=0,(1-SPAR_GPD$pred_Q),(SPAR_GPD$pred_Q+1))
+    v_vec = ifelse(SPAR_GPD$pred_Q>=0, 1-abs(u_vec),-1+abs(u_vec))
+    
+  } else {
+    
+    #Defining points on the unit sphere for the L2 norm
+    u_vec = ifelse(SPAR_GPD$pred_Q>=0,cos(pi*SPAR_GPD$pred_Q/2),cos(-pi*SPAR_GPD$pred_Q/2))
+    v_vec = ifelse(SPAR_GPD$pred_Q>=0, sqrt(1-u_vec^2),-sqrt(1-u_vec^2))
+    
+  }
+  
+  #Corresponding probability for return level set 
+  prob = 1/(ret_period*obs_year)
+  
+  #Checking if the probability is valid
+  if(prob > (1 - SPAR_GPD$thresh_prob)){
+    stop("Return period too small such that the SPAR model is no longer valid. Please try a larger return period value")
+  }
+  
+  #Computing radii values of return level set for fixed angles
+  ret_level_set = SPAR_GPD$pred_thresh + (SPAR_GPD$pred_para$scale/SPAR_GPD$pred_para$shape)*( (prob/(1 - SPAR_GPD$thresh_prob))^(-SPAR_GPD$pred_para$shape) - 1 )
+  
+  #Computing return level set contour on original scale
+  ret_level_contour = cbind(ret_level_set*u_vec,ret_level_set*v_vec); ret_level_contour = rbind(ret_level_contour,ret_level_contour[1,])
+  
+  #returning estimated return level set
+  return(ret_level_contour)
+}
+
 #Wrapper for fitting the empirical version of the SPAR model 
 SPAR_local = function(sample_data,norm_choice="L1",thresh_prob,pred_Q=seq(-2,2,length.out=201),num_neigh){ #wrapper for fitting the SPAR model 
   #sample_data - this denotes the bivariate data centered at (0,0) for which to fit SPAR. Must be an n x 2 matrix, where n denotes number of observations
@@ -672,7 +725,11 @@ SPAR_simulation = function(sample_data,nsim,norm_choice="L1",thresh_prob,k,k_sha
   f_Q = approxfun(x = (2*dens_est$x)/pi - 2,y = (pi/2)*dens_est$y)
   
   kd_integral = function(u,x,f_Q){
-    return(integrate(f_Q,-2,x)$value - u)
+    if(x>0.99999){
+      return(1 - u) #numerical error for really large probabilities. This ensures we integrate to 1
+    } else {
+      return(integrate(f_Q,-2,x)$value - u)
+    }
   }
   
   kd_root = function(u,f_Q){

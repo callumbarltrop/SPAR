@@ -4,13 +4,15 @@ source("master_functions.R")
 
 # Tuning parameters -------------------------------------------------------
 
-thresh_prob = 0.67 #Non-exceedance probability. This was selected through a basic sensitivity analysis
+thresh_prob = 0.7 #Non-exceedance probability. 
 
 k = 25 #Number of knots for threshold and scale spline models
 
 k_shape = 8 #Number of knots for shape spline model
 
-pred_Q = seq(-2,2,length.out=201) #Angles at which to evaluate predicted quantities
+pred_Q = seq(-2,2,length.out=1001) #Angles at which to evaluate predicted quantities
+
+pred_Q_loc = seq(-2,2,length.out=201) #Angles at which to evaluate predicted quantities for local fit
 
 bw = 50 #Bandwdith parameter for the circular density estimation
 
@@ -18,44 +20,60 @@ num_neigh = 500 #Number of neighbours for local windown estimation
 
 norm_choice = "L1" #Selecting the L1 norm. Can also choose L2 if desired/required
 
+ret_period = 10 #return period for evaluating return level set
+
 # Data -----------------------------------------
 
-data = readRDS(file="datafiles/dataset1.rds") #load data stored in the "dataset1.rds" file
+which.dataset = "A" #Select either A, B or C
 
-data = data[,2:1] #selecting only columns of interest
+data = readRDS(file=paste0("datafiles/dataset",which.dataset,".rds")) #loading in data from the datafiles folder
+
+data = data[,2:1] #selecting only columns of interest - Tz and Hs
 
 std_data = apply(data,2,function(x){(x-mean(x))/sd(x)}) #normalising the data
 #this standardising ensures the mean will be at (0,0), as required for the SPAR model
 
-#computing standard deviations from each variable. Required for evaluating equidensity contours
+#computing standard deviations from each variable. Required for transforming back to the original scale
 sds_data = apply(data,2,sd)
 
-#computing means of each variable. Required for transforming back to original scale
+#computing means of each variable. Required for transforming back to the original scale
 mus_data = apply(data,2,mean)
+
+#Frequency of observation. We observe hourly observations 365 days per year
+obs_year = 365*24 
+
+#Number of points to simulate from model
+nsim = dim(data)[1]*(1-thresh_prob)
 
 # Fitting SPAR model ------------------------------------------------------------
 
 #We fit the SPAR model smoothly with L1 coordinates
-SI_smooth_fit = fit_SPAR_model(sample_data = std_data,norm_choice = "L1",thresh_prob = thresh_prob,k=k,k_shape = k_shape,pred_Q = pred_Q)
+SPAR_smooth_fit = SPAR_smooth(sample_data = std_data,norm_choice = norm_choice,thresh_prob = thresh_prob,k=k,k_shape = k_shape,pred_Q = pred_Q)
 
 #We fit the SPAR model locally (via local windows) with L1 coordinates
-SI_local_fit = fit_SPAR_empirical(sample_data = std_data,norm_choice = "L1",thresh_prob = thresh_prob,pred_Q = pred_Q)
+SPAR_local_fit = SPAR_local(sample_data = std_data,norm_choice = norm_choice,thresh_prob = thresh_prob,pred_Q = pred_Q_loc,num_neigh = num_neigh)
 
 #We estimate the angular density with L1 coordinates
-SI_angular_density = SPAR_angular_density(sample_data = std_data,norm_choice = "L1",pred_Q = pred_Q,bw = bw)
+SPAR_angular_density = SPAR_angular_density(sample_data = std_data,norm_choice = norm_choice,pred_Q = pred_Q,bw = bw)
 
 #Define density levels for which to evaluate equidensity contours 
-density_levels = 10^(-(3:6)) 
+density_levels = 10^(-c(3,6)) 
 
 #Adjusting density levels to account for Jacobian of standardisation
 density_levels = density_levels*prod(sds_data)
 
 #Estimate equidensity contours for the desired levels
-SI_equidensity_curves = sapply(density_levels,SPAR_equidensity_contours,norm_choice="L1",SPAR_GPD=SI_smooth_fit,SPAR_ang=SI_angular_density,simplify = F)
+SPAR_equidensity_curves = SPAR_equidensity_contours(density_levels = density_levels,norm_choice=norm_choice,SPAR_GPD=SPAR_smooth_fit,SPAR_ang=SPAR_angular_density)
+
+#Estimate return level set for desired return period
+SPAR_RL_set = SPAR_ret_level_sets(ret_period = ret_period,obs_year = obs_year,norm_choice = norm_choice,SPAR_GPD = SPAR_smooth_fit)
+
+#Simulate new data from fitted SPAR model
+SPAR_simulation = SPAR_simulation(sample_data=std_data,nsim=nsim,norm_choice = norm_choice,thresh_prob = thresh_prob,k=k,k_shape = k_shape,pred_Q = pred_Q,bw=bw)
 
 # Validating model fits ---------------------------------------------------
 
-#Obtaining polar coordinates of dataset
+#Obtaining polar coordinates of dataset, along with points on the norm unit circle
 if(norm_choice == "L1"){
   
   L1_rad = function(vec){
@@ -74,6 +92,10 @@ if(norm_choice == "L1"){
   
   #dataframe of angular-radial data
   polar_data = data.frame(R=R,Q=Q)
+  
+  #Defining points on the unit sphere for the L1 norm
+  u_vec = ifelse(pred_Q>=0,(1-pred_Q),(pred_Q+1))
+  v_vec = ifelse(pred_Q>=0, 1-abs(u_vec),-1+abs(u_vec))
   
 } else {
   
@@ -94,56 +116,11 @@ if(norm_choice == "L1"){
   #dataframe of angular-radial data
   polar_data = data.frame(R=R,Q=Q)
   
-}
-
-#Setting plotting parameters
-par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
-
-#Computing the empirical histogram for angular density
-hist(polar_data$Q, freq = FALSE,xlab="Q", main = "Angular density",sub="L1 coordinates",col=NULL,cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
-
-#Comparing estimated angular density function to empirical
-lines(pred_Q,SI_angular_density,lwd=4,col=2)
-
-#Comparing local and smooth estimates of threshold function
-plot(pred_Q,SI_smooth_fit$pred_thresh,xlab="Q",ylab="R",main="Threshold",sub="L1 coordinates",typ="l",col=2,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(SI_smooth_fit$pred_thresh,SI_local_fit$pred_thresh))
-lines(pred_Q,SI_local_fit$pred_thresh,lwd=4,col="red")
-
-#Comparing local and smooth estimates of scale function
-plot(pred_Q,SI_smooth_fit$pred_para$scale,xlab="Q",ylab="R",main="Scale",sub="L1 coordinates",typ="l",col=3,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(SI_smooth_fit$pred_para$scale,SI_local_fit$pred_para$scale))
-lines(pred_Q,SI_local_fit$pred_para$scale,lwd=4,col="green")
-
-#Comparing local and smooth estimates of shape function
-plot(pred_Q,SI_smooth_fit$pred_para$shape,xlab="Q",ylab="R",main="Shape",sub="L1 coordinates",typ="l",col=4,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(SI_smooth_fit$pred_para$shape,SI_local_fit$pred_para$shape))
-lines(pred_Q,SI_local_fit$pred_para$shape,lwd=4,col="blue")
-
-#To avoid the plots needing a very long time to render, we only plot a subset of 5000 points
-set.seed(1)
-rand_5000 = sample(1:dim(data)[1],5000,replace=F)
-
-#We compute GPD upper bound for the conditional radial component
-upper_bound = SI_smooth_fit$pred_thresh - SI_smooth_fit$pred_para$scale/SI_smooth_fit$pred_para$shape
-
-#We check which coordinate system we are working in. This allows us to define vectors on the corresponding unit sphere
-if(norm_choice == "L1"){
-  
-  #Defining points on the unit sphere for the L1 norm
-  u_vec = ifelse(pred_Q>=0,(1-pred_Q),(pred_Q+1))
-  v_vec = ifelse(pred_Q>=0, 1-abs(u_vec),-1+abs(u_vec))
-  
-} else {
-  
   #Defining points on the unit sphere for the L2 norm
   u_vec = ifelse(pred_Q>=0,cos(pi*pred_Q/2),cos(-pi*pred_Q/2))
   v_vec = ifelse(pred_Q>=0, sqrt(1-u_vec^2),-sqrt(1-u_vec^2))
   
 }
-
-#Computing upper bound contour on Caresian coordinates 
-upper_contour = cbind(upper_bound*u_vec,upper_bound*v_vec); upper_contour = rbind(upper_contour,upper_contour[1,])
-
-#Computing threshold contour on Cartesian coordinates
-thresh_contour = cbind(SI_smooth_fit$pred_thresh*u_vec,SI_smooth_fit$pred_thresh*v_vec); thresh_contour = rbind(thresh_contour,thresh_contour[1,])
 
 #We transform everything from the normalised data back to the original coordinates
 #This function is a wrapper for performing this transformation
@@ -154,28 +131,101 @@ normalisation_inverse_function = function(y){
   return(norm_data*sd + mu)
 }
 
-#Transforming upper contour to original coordinates
-upper_contour = apply(rbind(mus_data,sds_data,upper_contour),2,normalisation_inverse_function)
-
-#Transforming threshold contour to original coordinates
-thresh_contour = apply(rbind(mus_data,sds_data,thresh_contour),2,normalisation_inverse_function)
-
 #Transforming density contours back to original coordinates
-for(i in 1:length(SI_equidensity_curves)){
-  SI_equidensity_curves[[i]] = apply(rbind(mus_data,sds_data,SI_equidensity_curves[[i]]),2,normalisation_inverse_function)
+for(i in 1:length(SPAR_equidensity_curves)){
+  SPAR_equidensity_curves[[i]] = apply(rbind(mus_data,sds_data,SPAR_equidensity_curves[[i]]),2,normalisation_inverse_function)
 }
 
-#Plotting sample of 5000 datapoints with upper bound
-plot(data[rand_5000,],pch=16,col="grey",main="Upper bound",sub="Random 5000 points",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(upper_contour[,2]),xlim=range(upper_contour[,1]))
-lines(upper_contour,lwd=3,col=4)
+SPAR_RL_set = apply(rbind(mus_data,sds_data,SPAR_RL_set),2,normalisation_inverse_function)
+
+SPAR_simulation$data_sample = apply(rbind(mus_data,sds_data,SPAR_simulation$data_sample),2,normalisation_inverse_function)
+
+pdf(file="plots/ang_dens_diag.pdf",width=6,height=6)
+#Setting plotting parameters
+par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
+
+#Computing the empirical histogram for angular density
+hist(polar_data$Q, freq = FALSE,xlab="Q",ylab=expression(f[Q](q)), main = "Angular density",sub="L1 coordinates",col=NULL,cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+
+#Comparing estimated angular density function to empirical
+lines(pred_Q,SPAR_angular_density,lwd=4,col="blue")
+
+dev.off()
+
+pdf(file="plots/local_smooth.pdf",width=12,height=4)
+#Setting plotting parameters
+par(mfrow=c(1,3),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
+
+#Comparing local and smooth estimates of threshold function
+plot(pred_Q,SPAR_smooth_fit$pred_thresh,xlab="Q",ylab=expression(u[gamma]),main="Threshold",sub="L1 coordinates",typ="l",col=2,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(SPAR_smooth_fit$pred_thresh,SPAR_local_fit$pred_thresh))
+lines(pred_Q_loc,SPAR_local_fit$pred_thresh,lwd=4,col="red")
+
+#Comparing local and smooth estimates of scale function
+plot(pred_Q,SPAR_smooth_fit$pred_para$scale,xlab="Q",ylab=expression(sigma),main="Scale",sub="L1 coordinates",typ="l",col=3,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(SPAR_smooth_fit$pred_para$scale,SPAR_local_fit$pred_para$scale))
+lines(pred_Q_loc,SPAR_local_fit$pred_para$scale,lwd=4,col="green")
+
+#Comparing local and smooth estimates of shape function
+plot(pred_Q,SPAR_smooth_fit$pred_para$shape,xlab="Q",ylab=expression(xi),main="Shape",sub="L1 coordinates",typ="l",col=4,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(SPAR_smooth_fit$pred_para$shape,SPAR_local_fit$pred_para$shape))
+lines(pred_Q_loc,SPAR_local_fit$pred_para$shape,lwd=4,col="blue")
+
+dev.off()
+
+#Plotting estimated equidensity contours
+png(file="plots/equidensity_contours.png",width=600,height=600)
+par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
+
+plot(data,pch=16,col="grey",main="Equidensity contours",sub="L1 coordinates",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(SPAR_equidensity_curves),xlim=range(SPAR_equidensity_curves))
+lines(SPAR_equidensity_curves[[1]],lwd=3,col="orange")
+lines(SPAR_equidensity_curves[[2]],lwd=3,col="cyan")
+legend(range(SPAR_equidensity_curves)[1],range(SPAR_equidensity_curves)[2],legend=c(expression(paste("10"^"-3")),expression(paste("10"^"-6"))),lwd=3,col=c("Orange","Cyan"),cex=1.2,bg="white")
+
+dev.off()
+
+#Plotting estimated return level set
+png(file="plots/ret_level_set.png",width=600,height=600)
+par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
+
+plot(data,pch=16,col="grey",main="Return level set",sub="L1 coordinates",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(SPAR_RL_set),xlim=range(SPAR_RL_set))
+lines(SPAR_RL_set,lwd=3,col="purple")
+
+dev.off()
+
+#Plotting SPAR model simulations
+png(file="plots/simulated_data.png",width=600,height=600)
+par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
+
+plot(data,pch=16,col="grey",main="SPAR simulations",sub="L1 coordinates",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(data,SPAR_simulation$data_sample),xlim=range(data,SPAR_simulation$data_sample))
+points(SPAR_simulation$data_sample,pch=16,col=adjustcolor(3,alpha.f = 0.2))
+legend(range(data,SPAR_simulation$data_sample)[1],range(data,SPAR_simulation$data_sample)[2],legend=c("Observerd","Simulated"),pch=16,col=c("grey",adjustcolor(3,alpha.f = 0.2)),cex=1.2,bg="white")
+#issue with angles in 1 to 2
+dev.off()
+
+png(file="plots/std_data.png",width=600,height=600)
+par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
+
+plot(std_data,pch=16,col="grey",main="SPAR simulations",sub="L1 coordinates",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(std_data,data_sample),xlim=range(std_data,data_sample))
+points(data_sample,pch=16,col=adjustcolor(3,alpha.f = 0.2))
+points(data_sample[which(SPAR_simulation$Q_sample> 1 & SPAR_simulation$Q_sample< 2) ,],pch=16,col=2)
+legend(range(std_data,data_sample)[1],range(std_data,data_sample)[2],legend=c("Observerd","Simulated"),pch=16,col=c("grey",adjustcolor(3,alpha.f = 0.2)),cex=1.2,bg="white")
+
+dev.off()
+
+#Simulation
+
+#Overall diag
+
+#Local diag
+
+
+
 
 #Plotting sample of 5000 datapoints with equidensity contours and threshold function
-plot(data[rand_5000,],pch=16,col="grey",main="Density contours and threshold function",sub="Random 5000 points",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(SI_equidensity_curves),xlim=range(SI_equidensity_curves))
-for(i in 1:length(SI_equidensity_curves)){
-  lines(SI_equidensity_curves[[i]],lwd=3,col=i+2)
+plot(data[rand_5000,],pch=16,col="grey",main="Density contours and threshold function",sub="Random 5000 points",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(SPAR_equidensity_curves),xlim=range(SPAR_equidensity_curves))
+for(i in 1:length(SPAR_equidensity_curves)){
+  lines(SPAR_equidensity_curves[[i]],lwd=3,col=i+2)
 }
 lines(thresh_contour,lwd=3,col=2)
-legend(range(SI_equidensity_curves)[1],range(SI_equidensity_curves)[2],legend=c("Threshold",paste0("10^(-",3:(length(SI_equidensity_curves)+2),")")),lwd=3,col=2:(length(SI_equidensity_curves)+2),cex=1.2,bg="white")
+legend(range(SPAR_equidensity_curves)[1],range(SPAR_equidensity_curves)[2],legend=c("Threshold",paste0("10^(-",3:(length(SPAR_equidensity_curves)+2),")")),lwd=3,col=2:(length(SPAR_equidensity_curves)+2),cex=1.2,bg="white")
 
 #Comparing local GPD fits
 ref_Q = seq(-2,1.5,by=0.5)
@@ -194,13 +244,13 @@ for(i in 1:length(windows_datasets)){
   
   window_R_data = windows_datasets[[i]]
   
-  window_thresh = SI_smooth_fit$pred_thresh[Q_index]
+  window_thresh = SPAR_smooth_fit$pred_thresh[Q_index]
   
   window_R_exc = window_R_data - window_thresh; window_R_exc = window_R_exc[window_R_exc>0]
   
-  window_scale = SI_smooth_fit$pred_para$scale[Q_index]
+  window_scale = SPAR_smooth_fit$pred_para$scale[Q_index]
   
-  window_shape = SI_smooth_fit$pred_para$shape[Q_index]
+  window_shape = SPAR_smooth_fit$pred_para$shape[Q_index]
   
   emp_quants = sort(window_R_exc)
   
