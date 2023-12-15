@@ -197,41 +197,48 @@ par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 plot(data,pch=16,col="grey",main="SPAR simulations",sub="L1 coordinates",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(data,SPAR_simulation$data_sample),xlim=range(data,SPAR_simulation$data_sample))
 points(SPAR_simulation$data_sample,pch=16,col=adjustcolor(3,alpha.f = 0.2))
 legend(range(data,SPAR_simulation$data_sample)[1],range(data,SPAR_simulation$data_sample)[2],legend=c("Observerd","Simulated"),pch=16,col=c("grey",adjustcolor(3,alpha.f = 0.2)),cex=1.2,bg="white")
-#issue with angles in 1 to 2
+
 dev.off()
 
-png(file="plots/std_data.png",width=600,height=600)
+#Extracting exceedance values on exponential scale
+emp_quants = sort(SPAR_smooth_fit$exp_quants)
+
+#Computing length of vector
+m = length(emp_quants)
+
+#Computing theoretical exponential quantiles
+model_quants = qexp((1:m)/(m+1))
+
+#Bootstrapping the observed exceedances
+nboots = 500
+emp_quants_boots = matrix(nrow=nboots,ncol=m)
+for(j in 1:nboots){
+  exceedance_sample = sort(emp_quants[sample(1:m,m,replace=T)])
+  emp_quants_boots[j,] = exceedance_sample  
+}
+
+#Computing confidence intervals
+upper_quants = apply(emp_quants_boots,2,quantile,probs=0.975)
+lower_quants = apply(emp_quants_boots,2,quantile,probs=0.025)
+
+#Plotting overall diagnostic
+png(file="global_diagnostic.png",width=500,height=500)
 par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
-plot(std_data,pch=16,col="grey",main="SPAR simulations",sub="L1 coordinates",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(std_data,data_sample),xlim=range(std_data,data_sample))
-points(data_sample,pch=16,col=adjustcolor(3,alpha.f = 0.2))
-points(data_sample[which(SPAR_simulation$Q_sample> 1 & SPAR_simulation$Q_sample< 2) ,],pch=16,col=2)
-legend(range(std_data,data_sample)[1],range(std_data,data_sample)[2],legend=c("Observerd","Simulated"),pch=16,col=c("grey",adjustcolor(3,alpha.f = 0.2)),cex=1.2,bg="white")
+plot(model_quants,emp_quants,xlim=range(model_quants,emp_quants,upper_quants,lower_quants),ylim=range(model_quants,emp_quants,upper_quants,lower_quants),pch=16,col="grey",xlab="Fitted",ylab="Empirical",main="QQ plot on exponential scale",cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+polygon(c(rev(model_quants), model_quants),c(rev(upper_quants),lower_quants),col = 'grey80', border = NA)
+points(model_quants,emp_quants,pch=16,col="black")
+abline(a=0,b=1,lwd=3,col=2)
 
 dev.off()
-
-#Simulation
-
-#Overall diag
-
-#Local diag
-
-
-
-
-#Plotting sample of 5000 datapoints with equidensity contours and threshold function
-plot(data[rand_5000,],pch=16,col="grey",main="Density contours and threshold function",sub="Random 5000 points",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(SPAR_equidensity_curves),xlim=range(SPAR_equidensity_curves))
-for(i in 1:length(SPAR_equidensity_curves)){
-  lines(SPAR_equidensity_curves[[i]],lwd=3,col=i+2)
-}
-lines(thresh_contour,lwd=3,col=2)
-legend(range(SPAR_equidensity_curves)[1],range(SPAR_equidensity_curves)[2],legend=c("Threshold",paste0("10^(-",3:(length(SPAR_equidensity_curves)+2),")")),lwd=3,col=2:(length(SPAR_equidensity_curves)+2),cex=1.2,bg="white")
 
 #Comparing local GPD fits
 ref_Q = seq(-2,1.5,by=0.5)
 
 #Computing local windows for which to evaluate GPD fits
 windows_datasets = sapply(ref_Q,SPAR_empirical_windows,polar_data=polar_data,num_neigh=num_neigh,simplify = F)
+
+pdf(file="local_diagnostic.pdf",width=16,height=8)
 
 par(mfrow=c(2,4),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
@@ -274,3 +281,5 @@ for(i in 1:length(windows_datasets)){
   abline(a=0,b=1,lwd=3,col=2)
   
 }
+
+dev.off()

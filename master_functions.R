@@ -725,8 +725,8 @@ SPAR_simulation = function(sample_data,nsim,norm_choice="L1",thresh_prob,k,k_sha
   f_Q = approxfun(x = (2*dens_est$x)/pi - 2,y = (pi/2)*dens_est$y)
   
   kd_integral = function(u,x,f_Q){
-    if(x>0.99999){
-      return(1 - u) #numerical error for really large probabilities. This ensures we integrate to 1
+    if(u>0.99999){
+      return(integrate(f_Q,-2,x)$value - integrate(f_Q,-2,2)$value) #numerical error for really large probabilities. This ensures we integrate to 1
     } else {
       return(integrate(f_Q,-2,x)$value - u)
     }
