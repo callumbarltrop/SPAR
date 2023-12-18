@@ -69,7 +69,7 @@ SPAR_equidensity_curves = SPAR_equidensity_contours(density_levels = density_lev
 SPAR_RL_set = SPAR_ret_level_sets(ret_period = ret_period,obs_year = obs_year,norm_choice = norm_choice,SPAR_GPD = SPAR_smooth_fit)
 
 #Simulate new data from fitted SPAR model
-SPAR_simulation = SPAR_simulation(sample_data=std_data,nsim=nsim,norm_choice = norm_choice,thresh_prob = thresh_prob,k=k,k_shape = k_shape,pred_Q = pred_Q,bw=bw)
+SPAR_simulated_data = SPAR_simulation(sample_data=std_data,nsim=nsim,norm_choice = norm_choice,thresh_prob = thresh_prob,k=k,k_shape = k_shape,pred_Q = pred_Q,bw=bw)
 
 # Validating model fits ---------------------------------------------------
 
@@ -138,14 +138,16 @@ for(i in 1:length(SPAR_equidensity_curves)){
 
 SPAR_RL_set = apply(rbind(mus_data,sds_data,SPAR_RL_set),2,normalisation_inverse_function)
 
-SPAR_simulation$data_sample = apply(rbind(mus_data,sds_data,SPAR_simulation$data_sample),2,normalisation_inverse_function)
+SPAR_simulated_data$data_sample = apply(rbind(mus_data,sds_data,SPAR_simulated_data$data_sample),2,normalisation_inverse_function)
 
 pdf(file="plots/ang_dens_diag.pdf",width=6,height=6)
 #Setting plotting parameters
 par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
+#Extracting empirical density function data
+hist_data = hist(polar_data$Q, plot=F) 
 #Computing the empirical histogram for angular density
-hist(polar_data$Q, freq = FALSE,xlab="Q",ylab=expression(f[Q](q)), main = "Angular density",sub="L1 coordinates",col=NULL,cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+hist(polar_data$Q, freq = FALSE,xlab="Q",ylab=expression(f[Q](q)), main = "Angular density",sub="L1 coordinates",col=NULL,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(SPAR_angular_density,0,hist_data$density))
 
 #Comparing estimated angular density function to empirical
 lines(pred_Q,SPAR_angular_density,lwd=4,col="blue")
@@ -194,9 +196,9 @@ dev.off()
 png(file="plots/simulated_data.png",width=600,height=600)
 par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
-plot(data,pch=16,col="grey",main="SPAR simulations",sub="L1 coordinates",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(data,SPAR_simulation$data_sample),xlim=range(data,SPAR_simulation$data_sample))
-points(SPAR_simulation$data_sample,pch=16,col=adjustcolor(3,alpha.f = 0.2))
-legend(range(data,SPAR_simulation$data_sample)[1],range(data,SPAR_simulation$data_sample)[2],legend=c("Observerd","Simulated"),pch=16,col=c("grey",adjustcolor(3,alpha.f = 0.2)),cex=1.2,bg="white")
+plot(data,pch=16,col="grey",main="SPAR simulations",sub="L1 coordinates",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(data,SPAR_simulated_data$data_sample),xlim=range(data,SPAR_simulated_data$data_sample))
+points(SPAR_simulated_data$data_sample,pch=16,col=adjustcolor(3,alpha.f = 0.2))
+legend(range(data,SPAR_simulated_data$data_sample)[1],range(data,SPAR_simulated_data$data_sample)[2],legend=c("Observerd","Simulated"),pch=16,col=c("grey",adjustcolor(3,alpha.f = 0.2)),cex=1.2,bg="white")
 
 dev.off()
 
@@ -222,7 +224,7 @@ upper_quants = apply(emp_quants_boots,2,quantile,probs=0.975)
 lower_quants = apply(emp_quants_boots,2,quantile,probs=0.025)
 
 #Plotting overall diagnostic
-png(file="global_diagnostic.png",width=500,height=500)
+png(file="plots/global_diagnostic.png",width=500,height=500)
 par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
 plot(model_quants,emp_quants,xlim=range(model_quants,emp_quants,upper_quants,lower_quants),ylim=range(model_quants,emp_quants,upper_quants,lower_quants),pch=16,col="grey",xlab="Fitted",ylab="Empirical",main="QQ plot on exponential scale",cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
@@ -238,7 +240,7 @@ ref_Q = seq(-2,1.5,by=0.5)
 #Computing local windows for which to evaluate GPD fits
 windows_datasets = sapply(ref_Q,SPAR_empirical_windows,polar_data=polar_data,num_neigh=num_neigh,simplify = F)
 
-pdf(file="local_diagnostic.pdf",width=16,height=8)
+pdf(file="plots/local_diagnostic.pdf",width=16,height=8)
 
 par(mfrow=c(2,4),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
