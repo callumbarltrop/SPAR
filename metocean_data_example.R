@@ -163,7 +163,7 @@ plot(pred_Q,SPAR_smooth_fit$pred_thresh,xlab="Q",ylab=expression(u[gamma]),main=
 lines(pred_Q_loc,SPAR_local_fit$pred_thresh,lwd=4,col="red")
 
 #Comparing local and smooth estimates of scale function
-plot(pred_Q,SPAR_smooth_fit$pred_para$scale,xlab="Q",ylab=expression(sigma),main="Scale",sub="L1 coordinates",typ="l",col=3,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(SPAR_smooth_fit$pred_para$scale,SPAR_local_fit$pred_para$scale))
+plot(pred_Q,SPAR_smooth_fit$pred_para$scale,xlab="Q",ylab=expression(tau),main="Scale",sub="L1 coordinates",typ="l",col=3,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,lwd=4,ylim=range(SPAR_smooth_fit$pred_para$scale,SPAR_local_fit$pred_para$scale))
 lines(pred_Q_loc,SPAR_local_fit$pred_para$scale,lwd=4,col="green")
 
 #Comparing local and smooth estimates of shape function
