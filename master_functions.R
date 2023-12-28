@@ -312,7 +312,11 @@ joint_dens_root_func = function(r,u,scale,shape,thresh_prob,f_q,dens_val){
   }
   
   #computing gpd density for R|Q=q
-  gpd_density = ((scale^(-1)) * pmax((1 + shape * (r - u)/scale),0)^((-1/shape) - 1))
+  if(r == u - scale/shape | abs(r - (u - scale/shape)) < 1e-10 ){
+    gpd_density = 0
+  } else {
+    gpd_density = ((scale^(-1)) * (max((1 + (shape)*((r - u)/scale)),0))^((-1/shape) - 1))
+  }
   
   #estimated joint density at (r,q)
   estimated_joint_dens = ((1-thresh_prob)*f_q/r)*gpd_density
@@ -365,7 +369,11 @@ SPAR_equidensity_contours = function(density_levels,norm_choice="L1",SPAR_GPD,SP
   dens_radii = matrix(NA,ncol = length(density_levels),nrow=length(pred_Q))
   for(i in 1:length(density_levels)){
     for(j in 1:length(pred_Q)){
-      dens_radii[j,i] = uniroot(joint_dens_root_func,interval = c(SPAR_GPD$pred_thresh[j],50),u=SPAR_GPD$pred_thresh[j],scale=SPAR_GPD$pred_para$scale[j],shape=SPAR_GPD$pred_para$shape[j],thresh_prob=SPAR_GPD$thresh_prob,f_q=SPAR_ang[j],dens_val=density_levels[i])$root
+      if(SPAR_GPD$pred_para$shape[j] < 0){
+        dens_radii[j,i] = uniroot(joint_dens_root_func,interval = c(SPAR_GPD$pred_thresh[j],(SPAR_GPD$pred_thresh[j] - (SPAR_GPD$pred_para$scale[j])/(SPAR_GPD$pred_para$shape[j]))),u=SPAR_GPD$pred_thresh[j],scale=SPAR_GPD$pred_para$scale[j],shape=SPAR_GPD$pred_para$shape[j],thresh_prob=SPAR_GPD$thresh_prob,f_q=SPAR_ang[j],dens_val=density_levels[i])$root
+      } else {
+        dens_radii[j,i] = uniroot(joint_dens_root_func,interval = c(SPAR_GPD$pred_thresh[j],50),u=SPAR_GPD$pred_thresh[j],scale=SPAR_GPD$pred_para$scale[j],shape=SPAR_GPD$pred_para$shape[j],thresh_prob=SPAR_GPD$thresh_prob,f_q=SPAR_ang[j],dens_val=density_levels[i])$root
+      }
     }
   }
   
