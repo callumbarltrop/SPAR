@@ -6,9 +6,9 @@ source("master_functions.R")
 
 thresh_prob = 0.7 #Non-exceedance probability. 
 
-k = 25 #Number of knots for threshold and scale spline models
+k = 35 #Number of knots for threshold and scale spline models
 
-k_shape = 8 #Number of knots for shape spline model
+k_shape = 12 #Number of knots for shape spline model
 
 pred_Q = seq(-2,2,length.out=1001) #Angles at which to evaluate predicted quantities
 
@@ -43,7 +43,7 @@ mus_data = apply(data,2,mean)
 obs_year = 365*24 
 
 #Number of points to simulate from model
-nsim = dim(data)[1]*(1-thresh_prob)
+nsim = dim(data)[1]
 
 # Fitting SPAR model ------------------------------------------------------------
 
@@ -61,6 +61,10 @@ density_levels = 10^(-c(3,6))
 
 #Adjusting density levels to account for Jacobian of standardisation
 density_levels = density_levels*prod(sds_data)
+
+if(norm_choice == "L2"){
+  density_levels = (pi/2)*density_levels
+}
 
 #Estimate equidensity contours for the desired levels
 SPAR_equidensity_curves = SPAR_equidensity_contours(density_levels = density_levels,norm_choice=norm_choice,SPAR_GPD=SPAR_smooth_fit,SPAR_ang=SPAR_angular_density)
@@ -140,7 +144,7 @@ SPAR_RL_set = apply(rbind(mus_data,sds_data,SPAR_RL_set),2,normalisation_inverse
 
 SPAR_simulated_data$data_sample = apply(rbind(mus_data,sds_data,SPAR_simulated_data$data_sample),2,normalisation_inverse_function)
 
-pdf(file="plots/ang_dens_diag.pdf",width=6,height=6)
+pdf(file="plots/metocean_ang_dens_diag.pdf",width=6,height=6)
 #Setting plotting parameters
 par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
@@ -154,7 +158,7 @@ lines(pred_Q,SPAR_angular_density,lwd=4,col="blue")
 
 dev.off()
 
-pdf(file="plots/local_smooth.pdf",width=12,height=4)
+pdf(file="plots/metocean_local_smooth.pdf",width=12,height=4)
 #Setting plotting parameters
 par(mfrow=c(1,3),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
@@ -173,7 +177,7 @@ lines(pred_Q_loc,SPAR_local_fit$pred_para$shape,lwd=4,col="blue")
 dev.off()
 
 #Plotting estimated equidensity contours
-png(file="plots/equidensity_contours.png",width=600,height=600)
+png(file="plots/metocean_equidensity_contours.png",width=600,height=600)
 par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
 plot(data,pch=16,col="grey",main="Equidensity contours",sub="L1 coordinates",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(SPAR_equidensity_curves),xlim=range(SPAR_equidensity_curves))
@@ -184,7 +188,7 @@ legend(range(SPAR_equidensity_curves)[1],range(SPAR_equidensity_curves)[2],legen
 dev.off()
 
 #Plotting estimated return level set
-png(file="plots/ret_level_set.png",width=600,height=600)
+png(file="plots/metocean_ret_level_set.png",width=600,height=600)
 par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
 plot(data,pch=16,col="grey",main="Return level set",sub="L1 coordinates",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(SPAR_RL_set),xlim=range(SPAR_RL_set))
@@ -193,7 +197,7 @@ lines(SPAR_RL_set,lwd=3,col="purple")
 dev.off()
 
 #Plotting SPAR model simulations
-png(file="plots/simulated_data.png",width=600,height=600)
+png(file="plots/metocean_simulated_data.png",width=600,height=600)
 par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
 plot(data,pch=16,col="grey",main="SPAR simulations",sub="L1 coordinates",xlab="Tz",ylab="Hs",cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(data,SPAR_simulated_data$data_sample),xlim=range(data,SPAR_simulated_data$data_sample))
@@ -224,7 +228,7 @@ upper_quants = apply(emp_quants_boots,2,quantile,probs=0.975)
 lower_quants = apply(emp_quants_boots,2,quantile,probs=0.025)
 
 #Plotting overall diagnostic
-png(file="plots/global_diagnostic.png",width=500,height=500)
+png(file="plots/metocean_global_diagnostic.png",width=500,height=500)
 par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
 plot(model_quants,emp_quants,xlim=range(model_quants,emp_quants,upper_quants,lower_quants),ylim=range(model_quants,emp_quants,upper_quants,lower_quants),pch=16,col="grey",xlab="Fitted",ylab="Empirical",main="QQ plot on exponential scale",cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
@@ -235,12 +239,12 @@ abline(a=0,b=1,lwd=3,col=2)
 dev.off()
 
 #Comparing local GPD fits
-ref_Q = seq(-2,1.5,by=0.5)
+ref_Q = seq(-1.5,2,by=0.5)
 
 #Computing local windows for which to evaluate GPD fits
 windows_datasets = sapply(ref_Q,SPAR_empirical_windows,polar_data=polar_data,num_neigh=num_neigh,simplify = F)
 
-pdf(file="plots/local_diagnostic.pdf",width=16,height=8)
+pdf(file="plots/metocean_local_diagnostic.pdf",width=16,height=8)
 
 par(mfrow=c(2,4),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
