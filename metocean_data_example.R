@@ -206,34 +206,22 @@ legend(range(data,SPAR_simulated_data$data_sample)[1],range(data,SPAR_simulated_
 
 dev.off()
 
-#Extracting exceedance values on exponential scale
-emp_quants = sort(SPAR_smooth_fit$exp_quants)
 
 #Computing length of vector
-m = length(emp_quants)
+m = length(SPAR_smooth_fit$exp_quants)
+
+#Extracting exceedance values on exponential scale
+model_quants = quantile(SPAR_smooth_fit$exp_quants,probs=(1:m)/(m+1))
 
 #Computing theoretical exponential quantiles
-model_quants = qexp((1:m)/(m+1))
-
-#Bootstrapping the observed exceedances
-nboots = 500
-emp_quants_boots = matrix(nrow=nboots,ncol=m)
-for(j in 1:nboots){
-  exceedance_sample = sort(emp_quants[sample(1:m,m,replace=T)])
-  emp_quants_boots[j,] = exceedance_sample  
-}
-
-#Computing confidence intervals
-upper_quants = apply(emp_quants_boots,2,quantile,probs=0.975)
-lower_quants = apply(emp_quants_boots,2,quantile,probs=0.025)
+theoretical_quants = qexp((1:m)/(m+1))
 
 #Plotting overall diagnostic
 png(file="plots/metocean_global_diagnostic.png",width=500,height=500)
 par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
-plot(model_quants,emp_quants,xlim=range(model_quants,emp_quants,upper_quants,lower_quants),ylim=range(model_quants,emp_quants,upper_quants,lower_quants),pch=16,col="grey",xlab="Fitted",ylab="Empirical",main="QQ plot on exponential scale",cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
-polygon(c(rev(model_quants), model_quants),c(rev(upper_quants),lower_quants),col = 'grey80', border = NA)
-points(model_quants,emp_quants,pch=16,col="black")
+plot(theoretical_quants,model_quants,xlim=range(model_quants,theoretical_quants),ylim=range(model_quants,theoretical_quants),pch=16,col="grey",xlab="Theoretical",ylab="Model",main="QQ plot on exponential scale",cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+points(theoretical_quants,model_quants,pch=16,col="black")
 abline(a=0,b=1,lwd=3,col=2)
 
 dev.off()
@@ -265,25 +253,14 @@ for(i in 1:length(windows_datasets)){
   
   window_shape = SPAR_smooth_fit$pred_para$shape[Q_index]
   
-  emp_quants = sort(window_R_exc)
+  m = length(window_R_exc)
   
-  m = length(emp_quants)
+  obs_quants = quantile(window_R_exc,probs=(1:m)/(m+1))
   
   model_quants = (window_scale/window_shape)*( (1- ((1:m)/(m+1)) )^(-window_shape) - 1 )
   
-  nboots = 500
-  emp_quants_boots = matrix(nrow=nboots,ncol=m)
-  for(j in 1:nboots){
-    exceedance_sample = sort(emp_quants[sample(1:m,m,replace=T)])
-    emp_quants_boots[j,] = exceedance_sample  
-  }
-  
-  upper_quants = apply(emp_quants_boots,2,quantile,probs=0.975)
-  lower_quants = apply(emp_quants_boots,2,quantile,probs=0.025)
-  
-  plot(model_quants,emp_quants,xlim=range(model_quants,emp_quants,upper_quants,lower_quants),ylim=range(model_quants,emp_quants,upper_quants,lower_quants),pch=16,col="grey",xlab="Fitted",ylab="Empirical",main=paste0("QQ plot for Q = ",ref_Q[i]),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
-  polygon(c(rev(model_quants), model_quants),c(rev(upper_quants),lower_quants),col = 'grey80', border = NA)
-  points(model_quants,emp_quants,pch=16,col="black",xlab="Model",ylab="Empirical",main="QQ plot")
+  plot(obs_quants,model_quants,xlim=range(model_quants,obs_quants),ylim=range(model_quants,obs_quants),pch=16,col="grey",xlab="Observed",ylab="Model",main=paste0("QQ plot for Q = ",ref_Q[i]),cex.lab=1.2, cex.axis=1.2,cex.main=1.5)
+  points(obs_quants,model_quants,pch=16,col="black")
   abline(a=0,b=1,lwd=3,col=2)
   
 }
