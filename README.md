@@ -15,4 +15,4 @@ Happy SPAR-ring!
 
 ## References
 
-C. J. R. Murphy-Barltrop, E. Mackay & P. Jonathan (2024). Inference for multivariate extremes via a semi-parametric angular-radial model. arXiv (to appear). 
+C. J. R. Murphy-Barltrop, E. Mackay & P. Jonathan (2024). Inference for multivariate extremes via a semi-parametric angular-radial model. arXiv, 2401.07259. 
