@@ -16,7 +16,7 @@ pred_Q_loc = seq(-2,2,length.out=201) #Angles at which to evaluate predicted qua
 
 bw = 50 #Bandwdith parameter for the circular density estimation
 
-num_neigh = 500 #Number of neighbours for local windown estimation
+num_neigh = 500 #Number of neighbours for local window estimation
 
 norm_choice = "L1" #Selecting the L1 norm. Can also choose L2 if desired/required
 

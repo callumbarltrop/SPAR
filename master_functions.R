@@ -1,6 +1,6 @@
 rm(list=ls())
 #Checking for required packages. This function will install any required packages if they are not already installed
-packages = c("evgam","copula","evd","parallel","circular")
+packages = c("evgam","copula","evd","parallel","circular","ismev")
 package.check <- lapply(
   packages,
   FUN = function(x) {
