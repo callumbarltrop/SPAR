@@ -62,18 +62,14 @@ density_levels = 10^(-c(3,6))
 #Adjusting density levels to account for Jacobian of standardisation
 density_levels = density_levels*prod(sds_data)
 
-if(norm_choice == "L2"){
-  density_levels = (pi/2)*density_levels
-}
-
 #Estimate equidensity contours for the desired levels
-SPAR_equidensity_curves = SPAR_equidensity_contours(density_levels = density_levels,norm_choice=norm_choice,SPAR_GPD=SPAR_smooth_fit,SPAR_ang=SPAR_angular_density)
+SPAR_equidensity_curves = SPAR_equidensity_contours(density_levels = density_levels,SPAR_GPD=SPAR_smooth_fit,SPAR_ang=SPAR_angular_density)
 
 #Estimate return level set for desired return period
-SPAR_RL_set = SPAR_ret_level_sets(ret_period = ret_period,obs_year = obs_year,norm_choice = norm_choice,SPAR_GPD = SPAR_smooth_fit)
+SPAR_RL_set = SPAR_ret_level_sets(ret_period = ret_period,obs_year = obs_year,SPAR_GPD=SPAR_smooth_fit)
 
 #Simulate new data from fitted SPAR model
-SPAR_simulated_data = SPAR_simulation(sample_data=std_data,nsim=nsim,norm_choice = norm_choice,thresh_prob = thresh_prob,k=k,k_shape = k_shape,pred_Q = pred_Q,bw=bw)
+SPAR_simulated_data = SPAR_simulation(nsim=nsim,SPAR_GPD=SPAR_smooth_fit,SPAR_ang=SPAR_angular_density)
 
 # Validating model fits ---------------------------------------------------
 

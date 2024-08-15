@@ -59,13 +59,13 @@ L2_angular_density = SPAR_angular_density(sample_data = example_data,norm_choice
 
 density_levels = 10^(-(3:8)) #density levels for which to evaluate isodensity contours 
 
-L1_isodensity_density_curves = SPAR_equidensity_contours(density_levels = density_levels,norm_choice="L1",SPAR_GPD=L1_smooth_fit,SPAR_ang=L1_angular_density)
+L1_isodensity_density_curves = SPAR_equidensity_contours(density_levels = density_levels,SPAR_GPD=L1_smooth_fit,SPAR_ang=L1_angular_density)
 
-L2_isodensity_density_curves = SPAR_equidensity_contours(density_levels = (pi/2)*density_levels,norm_choice="L2",SPAR_GPD=L2_smooth_fit,SPAR_ang=L2_angular_density)
+L2_isodensity_density_curves = SPAR_equidensity_contours(density_levels = density_levels,SPAR_GPD=L2_smooth_fit,SPAR_ang=L2_angular_density)
 
-L1_simulation = SPAR_simulation(sample_data=example_data,nsim=nsim,norm_choice = "L1",thresh_prob = thresh_prob,k=k,pred_Q = pred_Q,bw=bw)
+L1_simulation = SPAR_simulation(nsim=nsim,SPAR_GPD=L1_smooth_fit,SPAR_ang=L1_angular_density)
 
-L2_simulation = SPAR_simulation(sample_data=example_data,nsim=nsim,norm_choice = "L2",thresh_prob = thresh_prob,k=k,pred_Q = pred_Q,bw=bw)
+L2_simulation = SPAR_simulation(nsim=nsim,SPAR_GPD=L2_smooth_fit,SPAR_ang=L2_angular_density)
 
 # Comparing estimates and validation -----------------------------------------------------
 
