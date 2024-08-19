@@ -342,7 +342,7 @@ SPAR_smooth_polar = function(sample_data,thresh_prob,k,k_shape=NULL,pred_phi=seq
   exp_quants = qexp(1 - ( 1 + ((predict(m_gpd,type = "response",newdata=polar_exceedance_data))$shape/(predict(m_gpd,type = "response",newdata=polar_exceedance_data))$scale)*(polar_exceedance_data$R_exc)  )^(-1/(predict(m_gpd,type = "response",newdata=polar_exceedance_data))$shape))
   
   #return estimated threshold and parameter functions, along with the angular grid and non-exceedance probability. These are given in a list
-  return(list(pred_thresh=pred_thresh,pred_para=pred_para,pred_phi=pred_phi,thresh_prob=thresh_prob,exp_quants=exp_quants))
+  return(list(pred_thresh=pred_thresh,pred_para=pred_para,pred_phi=pred_phi,thresh_prob=thresh_prob,exp_quants=exp_quants,polar_data=polar_data,polar_exceedance_data=polar_exceedance_data,k=k,k_shape=k_shape,ald_coeff = m_ald$coefficients[1:(k-1)],gpd_coeff = m_gpd$coefficients))
   
 }
 
@@ -588,10 +588,10 @@ SPAR_equidensity_contours_polar = function(density_levels,SPAR_GPD,SPAR_ang){
     stop("At least one of the density_levels is too high, such that the SPAR model is not valid. Please input values greater than")
   }
   if(!is.list(SPAR_GPD)){
-    stop("SPAR_GPD must be a list obtained as output from either SPAR_smooth or SPAR_local")
+    stop("SPAR_GPD must be a list obtained as output from either SPAR_smooth_polar or SPAR_local")
   }
   if(!is.vector(SPAR_ang)){
-    stop("SPAR_ang must be a vector obtained as output from SPAR_angular_density")
+    stop("SPAR_ang must be a vector obtained as output from SPAR_angular_density_polar")
   }
 
   pred_phi = SPAR_GPD$pred_phi
@@ -1066,59 +1066,58 @@ SPAR_simulation_polar = function(nsim,SPAR_GPD,SPAR_ang){ #wrapper for simulatin
     stop("nsim must be a positive real integer")
   }
   if(!is.list(SPAR_GPD)){
-    stop("SPAR_GPD must be a list obtained as output from SPAR_smooth")
+    stop("SPAR_GPD must be a list obtained as output from SPAR_smooth_polar")
   }
   if(!is.vector(SPAR_ang)){
-    stop("SPAR_ang must be a vector obtained as output from SPAR_angular_density")
+    stop("SPAR_ang must be a vector obtained as output from SPAR_angular_density_polar")
   }
   
   #simulating new angular observations 
-  f_Q = approxfun(x = SPAR_GPD$pred_Q,y = SPAR_ang)
+  f_Phi = approxfun(x = SPAR_GPD$pred_phi,y = SPAR_ang)
   
   #angular CDF must be evaluated numerically and solved with a rootfinder 
-  kd_integral = function(u,x,f_Q){
+  kd_integral = function(u,x,f_Phi){
     if(u>0.99999){
-      return(integrate(f_Q,-2,x)$value - integrate(f_Q,-2,2)$value) #numerical error for really large probabilities. This ensures we integrate to 1
+      return(integrate(f_Phi,0,x)$value - integrate(f_Phi,0,2*pi)$value) #numerical error for really large probabilities. This ensures we integrate to 1
     } else {
-      return(integrate(f_Q,-2,x)$value - u)
+      return(integrate(f_Phi,0,x)$value - u)
     }
   }
   
-  kd_root = function(u,f_Q){
-    return(uniroot(f=kd_integral,interval = c(-2,2),u=u,f_Q = f_Q)$root)
+  kd_root = function(u,f_Phi){
+    return(uniroot(f=kd_integral,interval = c(0,2*pi),u=u,f_Phi = f_Phi)$root)
   }
   
   unif_sample = runif(nsim)
   
   #new sample of angles from angular density distribution 
-  Q_sample = sapply(unif_sample,kd_root,f_Q=f_Q)
+  Phi_sample = sapply(unif_sample,kd_root,f_Phi=f_Phi)
   
   #extracting tuning parameters 
   k = SPAR_GPD$k
   k_shape = SPAR_GPD$k_shape
-  norm_choice = SPAR_GPD$norm_choice
   
   #extracting ALD model coefficients 
   ald_coeff = SPAR_GPD$ald_coeff
   
   #fitting a simple dummy model to generate the design matrices 
-  ald_fmla = as.formula(paste0("logR ~ s(Q,bs='cc',k=",k,")"))
+  ald_fmla = as.formula(paste0("logR ~ s(Phi,bs='cc',k=",k,")"))
   
   dummy_model <- gam(ald_fmla, data = SPAR_GPD$polar_data)
   
   #obtaining threshold function for sampled angles   
-  thresh_sample = c(exp(predict(dummy_model,data.frame(Q=Q_sample),type="lpmatrix")%*%ald_coeff) )
+  thresh_sample = c(exp(predict(dummy_model,data.frame(Phi=Phi_sample),type="lpmatrix")%*%ald_coeff) )
   
   #extracting GPD model coefficients and fitting dummy models for design matrices 
   if(is.null(k_shape)){
     scale_coeff = SPAR_GPD$gpd_coeff[1:(k-1)]
     shape_coeff = SPAR_GPD$gpd_coeff[k]
     
-    gpd_fmla = as.formula(paste0("R_exc ~ s(Q,bs='cc',k=",k,")"))
+    gpd_fmla = as.formula(paste0("R_exc ~ s(Phi,bs='cc',k=",k,")"))
     
     dummy_model2 <- gam(gpd_fmla, data = SPAR_GPD$polar_exceedance_data)
     
-    scale_sample = c(exp(predict(dummy_model2,data.frame(Q=Q_sample),type="lpmatrix")%*%scale_coeff))
+    scale_sample = c(exp(predict(dummy_model2,data.frame(Phi=Phi_sample),type="lpmatrix")%*%scale_coeff))
     
     shape_sample = shape_coeff
     
@@ -1126,13 +1125,13 @@ SPAR_simulation_polar = function(nsim,SPAR_GPD,SPAR_ang){ #wrapper for simulatin
     scale_coeff = SPAR_GPD$gpd_coeff[1:(k-1)]
     shape_coeff = SPAR_GPD$gpd_coeff[k:length(SPAR_GPD$gpd_coeff)]
     
-    gpd_fmla = list(as.formula(paste0("R_exc ~ s(Q, bs='cc',k=",k,")")), as.formula(paste0("~ s(Q2, bs='cc',k=",k_shape,")")))
+    gpd_fmla = list(as.formula(paste0("R_exc ~ s(Phi, bs='cc',k=",k,")")), as.formula(paste0("~ s(Phi2, bs='cc',k=",k_shape,")")))
     
     dummy_model2 <- gam(gpd_fmla,family = gaulss, data = SPAR_GPD$polar_exceedance_data)
     
-    scale_sample = c(exp(predict(dummy_model2,data.frame(Q=Q_sample,Q2=Q_sample),type="lpmatrix")[,1:(k-1)]%*%scale_coeff))
+    scale_sample = c(exp(predict(dummy_model2,data.frame(Phi=Phi_sample,Phi2=Phi_sample),type="lpmatrix")[,1:(k-1)]%*%scale_coeff))
     
-    shape_sample = c(predict(dummy_model2,data.frame(Q=Q_sample,Q2=Q_sample),type="lpmatrix")[,k:length(SPAR_GPD$gpd_coeff)]%*%shape_coeff)
+    shape_sample = c(predict(dummy_model2,data.frame(Phi=Phi_sample,Phi2=Phi_sample),type="lpmatrix")[,k:length(SPAR_GPD$gpd_coeff)]%*%shape_coeff)
   }
   
   #sampling from the fitted GPD distribution for the sampled angles 
@@ -1140,23 +1139,12 @@ SPAR_simulation_polar = function(nsim,SPAR_GPD,SPAR_ang){ #wrapper for simulatin
   
   R_sample = thresh_sample + (scale_sample/  shape_sample)*(unif_sample^(-shape_sample)-1)
   
-  #We check which coordinate system we are working in
-  if(norm_choice == "L1"){
-    
-    #Defining points on the unit sphere for the L1 norm
-    u_vec = ifelse(Q_sample>=0,(1-Q_sample),(Q_sample+1))
-    v_vec = ifelse(Q_sample>=0, 1-abs(u_vec),-1+abs(u_vec))
-    
-  } else {
-    
-    #Defining points on the unit sphere for the L2 norm
-    u_vec = ifelse(Q_sample>=0,cos(pi*Q_sample/2),cos(-pi*Q_sample/2))
-    v_vec = ifelse(Q_sample>=0, sqrt(1-u_vec^2),-sqrt(1-u_vec^2))
-    
-  }
+  #Defining points on the unit sphere for the L2 norm
+  u_vec = cos(Phi_sample)
+  v_vec = sin(Phi_sample)
   
   data_sample = cbind(R_sample*u_vec,R_sample*v_vec)
   
   #returning simulated datasets
-  return(list(Q_sample = Q_sample,R_sample = R_sample,data_sample = data_sample))
+  return(list(Phi_sample = Phi_sample,R_sample = R_sample,data_sample = data_sample))
 }
