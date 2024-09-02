@@ -1,5 +1,5 @@
 # SPAR
-## R Code for the paper "Inference for multivariate extremes via a semi-parametric angular-radial model"
+## R Code for the paper "Inference for bivariate extremes via a semi-parametric angular-radial model"
 
 This repository contains the code required for the inference techniques introduced in Murphy-Barltrop et al. (2024). These files can be used to recreate plots from the paper, and to estimate all relevant quantities of interest. 
 
@@ -15,4 +15,4 @@ Happy SPAR-ring!
 
 ## References
 
-C. J. R. Murphy-Barltrop, E. Mackay & P. Jonathan (2024). Inference for multivariate extremes via a semi-parametric angular-radial model. arXiv, 2401.07259. 
+C. J. R. Murphy-Barltrop, E. Mackay & P. Jonathan (2024). Inference for bivariate extremes via a semi-parametric angular-radial model. arXiv, 2401.07259. 
