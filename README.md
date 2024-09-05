@@ -94,25 +94,25 @@ Finally, you can produce plots diagnostic plots to check the quality of model fi
 
 ### Angular density diagnostic
 
-<img src="plots/gaussian_ang_dens_diag_polar.png" style="max-width: 50%; height: auto;">
+<img src="plots/gaussian_ang_dens_diag_polar.png" style="max-width: 30%; height: auto;">
 
 ### True vs estimated angular density
 
-<img src="plots/gaussian_ang_dens_polar.png" style="max-width: 50%; height: auto;">
+<img src="plots/gaussian_ang_dens_polar.png" style="max-width: 30%; height: auto;">
 
 ### Isodensity contour estimates (with truth)
 
-<img src="plots/gaussian_isodensity_contours_polar.png" style="max-width: 50%; height: auto;">
+<img src="plots/gaussian_isodensity_contours_polar.png" style="max-width: 30%; height: auto;">
 
 (Don't take such extreme estimates at face value - they require confidence intervals to be meaningful.)
 
 ### 10-year return level set estimate
 
-<img src="plots/gaussian_rl_set_polar.png" style="max-width: 50%; height: auto;">
+<img src="plots/gaussian_rl_set_polar.png" style="max-width: 30%; height: auto;">
 
 ### SPAR model simulations
 
-<img src="plots/gaussian_simulated_data_polar.png" style="max-width: 50%; height: auto;">
+<img src="plots/gaussian_simulated_data_polar.png" style="max-width: 30%; height: auto;">
 
 ## Descriptions of each R script
 
