@@ -4,7 +4,7 @@ source("master_functions.R")
 
 # Example data - bivariate normal ------------------------------------------------------------------
 
-#We simulatte 10,000 points on standard Laplace margins from a bivariate Gaussian copula with correlation coefficient 0.5
+#We simulate 10,000 points on standard Laplace margins from a bivariate Gaussian copula with correlation coefficient 0.5
 
 n = 10000
 
@@ -17,6 +17,15 @@ normc = normalCopula(param = rho, dim = d)
 set.seed(1)
 example_data = apply(rCopula(n, copula = normc),2,Laplace_inverse)
 
+#polar transformation
+polar_data = rect2polar(t(example_data))
+
+#altering the angular component to be a vector rather than a matrix
+polar_data$phi = as.vector(polar_data$phi)
+
+names(polar_data) = c("R","Phi")
+
+polar_data = as.data.frame(polar_data)
 
 # Tuning parameters -------------------------------------
 
@@ -37,9 +46,6 @@ bw = 50
 #Number of neighbours for local estimation approach
 num_neigh = 300
 
-#Number of obervsations to simulate from the SPAR model
-nsim = n
-
 # Fitting SPAR ------------------------------------------------------------
 
 #The below code fits the SPAR model using both angular systems. The threshold and parameter functions are estimated both locally and smoothly
@@ -51,10 +57,27 @@ local_fit = SPAR_local_polar(sample_data = example_data,thresh_prob = thresh_pro
 
 angular_density = SPAR_angular_density_polar(sample_data = example_data,pred_phi = pred_phi,bw = bw)
 
-density_levels = 10^(-(3:8)) #density levels for which to evaluate isodensity contours 
+# Obtaining statistics and simulations ----------------------------------------------
 
-isodensity_density_curves = SPAR_equidensity_contours_polar(density_levels = density_levels,SPAR_GPD=smooth_fit,SPAR_ang=angular_density)
+#density levels for which to evaluate isodensity contours
+density_levels = 10^(-(3:8))  
 
+#obtaining isodensity contours
+isodensity_contours = SPAR_equidensity_contours_polar(density_levels = density_levels,SPAR_GPD=smooth_fit,SPAR_ang=angular_density)
+
+#return period for evaluating return level set
+ret_period = 10 
+
+#number of data points per year (treating the simulations as daily data)
+obs_year = 365
+
+#Estimate return level set for desired return period
+RL_set = SPAR_ret_level_sets_polar(ret_period = ret_period,obs_year = obs_year,SPAR_GPD=smooth_fit)
+
+#Number of observations to simulate from the SPAR model
+nsim = n
+
+#obtaining model simulations
 simulated_data = SPAR_simulation_polar(nsim=nsim,SPAR_GPD=smooth_fit,SPAR_ang=angular_density)
 
 # Comparing estimates and validation -----------------------------------------------------
@@ -74,6 +97,39 @@ lines(pred_phi,local_fit$pred_para$scale,lwd=4,col="green")
 #Comparing local and smooth estimates of shape function
 plot(pred_phi,smooth_fit$pred_para$shape,xlab=expression(phi),ylab=expression(xi),main="Shape",typ="l",col=4,cex.lab=1.2, cex.axis=1.2,cex.main=1.55,cex.sub=1.3,lwd=4,ylim=range(smooth_fit$pred_para$shape,local_fit$pred_para$shape))
 lines(pred_phi,local_fit$pred_para$shape,lwd=4,col="blue")
+
+dev.off()
+
+#Load in data files containing true angular density
+true_angdens = readRDS(file="datafiles/gaussian_L2.rds")
+
+true_angdens = rbind(true_angdens[true_angdens$theta >0,],true_angdens[true_angdens$theta < 0,])
+
+true_angdens$theta[true_angdens$theta<0] = 2*pi + true_angdens$theta[true_angdens$theta<0]
+
+pdf(file="plots/gaussian_ang_dens_polar.pdf",width=6,height=6)
+
+#Setting plotting parameters
+par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
+
+#Plots comparing angular density estimates to truth for both sets of estimates
+plot(true_angdens$theta,true_angdens$ft,type="l",lwd=3,col=2,xlab=expression(phi),ylab=bquote(f[Phi](phi)),main="Angular density",ylim=range(angular_density,true_angdens$ft),cex.lab=1.2, cex.axis=1.2,cex.main=1.55,cex.sub=1.3)
+lines(pred_phi,angular_density,lwd=3,col=3)
+legend(0,0.1,legend=c("True","Estimated"),lwd=3,col=c(2,3),cex=1.2,bg="white")
+
+dev.off()
+
+pdf(file="plots/gaussian_ang_dens_diag_polar.pdf",width=6,height=6)
+#Setting plotting parameters
+par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
+
+#Extracting empirical density function data
+hist_data = hist(polar_data$Phi, plot=F) 
+#Computing the empirical histogram for angular density
+hist(polar_data$Phi, freq = FALSE,xlab="Phi",ylab=expression(f[Phi](phi)), main = "Angular density",col=NULL,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(angular_density,0,hist_data$density))
+
+#Comparing estimated angular density function to empirical
+lines(pred_phi,angular_density,lwd=4,col="blue")
 
 dev.off()
 
@@ -115,28 +171,20 @@ par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 plot(gaussian_density_contours[[1]],xlab="X",ylab="Y",main="Isodensity contours for Gaussian copula",type="l",col=1,lwd=3,xlim=range(gaussian_density_contours),ylim=range(gaussian_density_contours),cex.lab=1.2, cex.axis=1.2,cex.main=1.55,cex.sub=1.3)
 for(i in 1:length(gaussian_density_contours)){
   lines(gaussian_density_contours[[i]],lwd=3,col=colfunc_true(length(gaussian_density_contours))[i])
-  lines(isodensity_density_curves[[i]],lwd=3,col=colfunc_est(length(gaussian_density_contours))[i],lty=2)
+  lines(isodensity_contours[[i]],lwd=3,col=colfunc_est(length(gaussian_density_contours))[i],lty=2)
 }
 legend(-15,15,legend=paste0("10^(",-(1:length(gaussian_density_contours))-2,")"),lwd=3,col=colfunc_true(length(gaussian_density_contours)),cex=1.2,bg="white")
 
 dev.off()
 
-#Load in data files containing true angular densities for both coordinate systems
-true_angdens = readRDS(file="datafiles/gaussian_L2.rds")
-
-true_angdens = rbind(true_angdens[true_angdens$theta >0,],true_angdens[true_angdens$theta < 0,])
-
-true_angdens$theta[true_angdens$theta<0] = 2*pi + true_angdens$theta[true_angdens$theta<0]
-
-pdf(file="plots/gaussian_ang_dens_polar.pdf",width=6,height=6)
+pdf(file="plots/gaussian_rl_set_polar.pdf",width=6,height=6)
 
 #Setting plotting parameters
 par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
-#Plots comparing angular density estimates to truth for both sets of estimates
-plot(true_angdens$theta,true_angdens$ft,type="l",lwd=3,col=2,xlab=expression(phi),ylab=bquote(f[Phi](phi)),main="Angular density",ylim=range(angular_density,true_angdens$ft),cex.lab=1.2, cex.axis=1.2,cex.main=1.55,cex.sub=1.3)
-lines(pred_phi,angular_density,lwd=3,col=3)
-legend(0,0.1,legend=c("True","Estimated"),lwd=3,col=c(2,3),cex=1.2,bg="white")
+#Plotting return level sets 
+plot(example_data,xlab="X",ylab="Y",main="Return level set",col="grey",pch=16,lwd=3,xlim=c(-10,10),ylim=c(-10,10),cex.lab=1.2, cex.axis=1.2,cex.main=1.55,cex.sub=1.3)
+lines(SPAR_RL_set,lwd=3,col="purple")
 
 dev.off()
 
