@@ -126,7 +126,7 @@ par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 #Extracting empirical density function data
 hist_data = hist(polar_data$Phi, plot=F) 
 #Computing the empirical histogram for angular density
-hist(polar_data$Phi, freq = FALSE,xlab="Phi",ylab=expression(f[Phi](phi)), main = "Angular density",col=NULL,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(angular_density,0,hist_data$density))
+hist(polar_data$Phi, freq = FALSE,xlab=expression(Phi),ylab=expression(f[Phi](phi)), main = "Angular density",col=NULL,cex.lab=1.2, cex.axis=1.2,cex.main=1.5,ylim=range(angular_density,0,hist_data$density))
 
 #Comparing estimated angular density function to empirical
 lines(pred_phi,angular_density,lwd=4,col="blue")
@@ -184,7 +184,7 @@ par(mfrow=c(1,1),mgp=c(2.5,1,0),mar=c(5,4,4,2)+0.1)
 
 #Plotting return level sets 
 plot(example_data,xlab="X",ylab="Y",main="Return level set",col="grey",pch=16,lwd=3,xlim=c(-10,10),ylim=c(-10,10),cex.lab=1.2, cex.axis=1.2,cex.main=1.55,cex.sub=1.3)
-lines(SPAR_RL_set,lwd=3,col="purple")
+lines(RL_set,lwd=3,col="purple")
 
 dev.off()
 

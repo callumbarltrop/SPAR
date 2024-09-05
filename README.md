@@ -90,37 +90,38 @@ Finally, you can produce plots diagnostic plots to check the quality of model fi
 
 ### Local vs smooth model fits 
 
-<embed src="plots/gaussian_local_smooth_polar.pdf" type="application/pdf" style="width: 100%; height: 225px;">
+<img src="plots/gaussian_local_smooth_polar.png" style="max-width: 100%; height: auto;">
 
 ### Angular density diagnostic
 
-<embed src="plots/gaussian_ang_dens_diag_polar.pdf" type="application/pdf" style="width: 100%; height: 600px;">
+<img src="plots/gaussian_ang_dens_diag_polar.png" style="max-width: 50%; height: auto;">
 
 ### True vs estimated angular density
 
-<embed src="plots/gaussian_ang_dens_polar.pdf" type="application/pdf" style="width: 100%; height: 600px;">
+<img src="plots/gaussian_ang_dens_polar.png" style="max-width: 50%; height: auto;">
 
 ### Isodensity contour estimates (with truth)
 
-<embed src="plots/gaussian_isodensity_contours_polar.pdf" type="application/pdf" style="width: 100%; height: 600px;">
+<img src="plots/gaussian_isodensity_contours_polar.png" style="max-width: 50%; height: auto;">
+
 (Don't take such extreme estimates at face value - they require confidence intervals to be meaningful.)
 
 ### 10-year return level set estimate
 
-<embed src="plots/gaussian_rl_set_polar.pdf" type="application/pdf" style="width: 100%; height: 600px;">
+<img src="plots/gaussian_rl_set_polar.png" style="max-width: 50%; height: auto;">
 
 ### SPAR model simulations
 
-<embed src="plots/gaussian_simulated_data_polar.pdf" type="application/pdf" style="width: 100%; height: 600px;">
+<img src="plots/gaussian_simulated_data_polar.png" style="max-width: 50%; height: auto;">
 
 ## Descriptions of each R script
 
 All plots can be easily recreated with the R scripts provided. These scripts can be easily modified to apply the SPAR model to any bivariate data set. A brief description of each script is given below. 
 
-* master_functions.R - this file contains all functions and packages required for performing inference
-* gaussian_data_example.R - this file illustrates how to fit the SPAR model to an L1, or L2, norm decomposition of data from a Gaussian copula
-* gaussian_data_polar_example.R - this file illustrates how to fit the SPAR model to a polar decomposition of data from a Gaussian copula
-* metocean_data_example.R - this file illustrates how to fit the SPAR model to the metocean data sets considered in the case study of Murphy-Barltrop et al. (2024). 
+* **master_functions.R** - this file contains all functions and packages required for performing inference
+* **gaussian_data_example.R** - this file illustrates how to fit the SPAR model to an L1, or L2, norm decomposition of data from a Gaussian copula
+* **gaussian_data_polar_example.R** - this file illustrates how to fit the SPAR model to a polar decomposition of data from a Gaussian copula
+* **metocean_data_example.R** - this file illustrates how to fit the SPAR model to the metocean data sets considered in the case study of Murphy-Barltrop et al. (2024). 
 
 The `datafiles' folder contains some .rds files required for running the example scripts.
 
@@ -130,10 +131,10 @@ Please get in touch if you have any questions, or if you find a bug in the code.
 
 ### **Happy SPAR-ring!**
 
-## References
+### References
 
 E. Mackay & P. Jonathan (2023). Modelling multivariate extremes through angular-radial decomposition of the density function. arXiv preprint arXiv:2310.12711.
 
 C. J. R. Murphy-Barltrop, E. Mackay & P. Jonathan (2024). Inference for bivariate extremes via a semi-parametric angular-radial model. Extremes (to appear). 
 
-E. Mackay, C. J. R. Murphy-Barltrop, & P. Jonathan. "The SPAR Model: A New Paradigm for Multivariate Extremes: Application to Joint Distributions of Metocean Variables." Journal of Offshore Mechanics and Arctic Engineering 147.1 (2025).
+E. Mackay, C. J. R. Murphy-Barltrop, & P. Jonathan (2025). "The SPAR Model: A New Paradigm for Multivariate Extremes: Application to Joint Distributions of Metocean Variables." Journal of Offshore Mechanics and Arctic Engineering 147.1.
