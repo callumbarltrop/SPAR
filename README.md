@@ -135,6 +135,6 @@ Please get in touch if you have any questions, or if you find a bug in the code.
 
 E. Mackay & P. Jonathan (2023). Modelling multivariate extremes through angular-radial decomposition of the density function. arXiv preprint arXiv:2310.12711.
 
-C. J. R. Murphy-Barltrop, E. Mackay & P. Jonathan (2024). Inference for bivariate extremes via a semi-parametric angular-radial model. Extremes (to appear). 
+C. J. R. Murphy-Barltrop, E. Mackay & P. Jonathan (2024). Inference for bivariate extremes via a semi-parametric angular-radial model. Extremes (2024), https://doi.org/10.1007/s10687-024-00492-2. 
 
 E. Mackay, C. J. R. Murphy-Barltrop, & P. Jonathan (2025). "The SPAR Model: A New Paradigm for Multivariate Extremes: Application to Joint Distributions of Metocean Variables." Journal of Offshore Mechanics and Arctic Engineering 147.1.
