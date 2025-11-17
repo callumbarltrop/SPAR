@@ -187,6 +187,9 @@ SPAR_smooth = function(sample_data,norm_choice="L1",thresh_prob,k,k_shape=NULL,p
   #Estimated threshold functions. The exp function is used to transform back to R from the logR scale
   gpd_thresh_function = exp(predict(m_ald, newdata=polar_data)$location) 
   
+  #Append threshold function 
+  polar_data$thresh_func = gpd_thresh_function
+  
   #all exceedances of threshold function
   gpd_thresh_exceedances = polar_data$R - gpd_thresh_function
   
@@ -290,6 +293,9 @@ SPAR_smooth_polar = function(sample_data,thresh_prob,k,k_shape=NULL,pred_phi=seq
   
   #Estimated threshold functions. The exp function is used to transform back to R from the logR scale
   gpd_thresh_function = exp(predict(m_ald, newdata=polar_data)$location) 
+  
+  #Append threshold function 
+  polar_data$thresh_func = gpd_thresh_function
   
   #all exceedances of threshold function
   gpd_thresh_exceedances = polar_data$R - gpd_thresh_function
